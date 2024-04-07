@@ -11,23 +11,23 @@ pub fn routes(mc: ModelController) -> Router{
     let app_state = AppState{mc};
     Router::new()
         .route("/tickets", post(create_ticket).get(list_tickets))
-        .route("/tickets/:id", delete(delete_ticket(state, path)))
+        .route("/tickets/:id", delete(delete_ticket(state, ctx, path)))
         .with_state(mc)
     
 }
 //region ----REST Hanndlers
-async fn create_ticket(State(mc): State<ModelController>, Json(ticket_fc): Json<TicketForCreate>)-> Result<Json<Ticket>>{
-    let ticket = mc.create_ticket(ticket_fc).await?;
+async fn create_ticket(State(mc): State<ModelController>, ctx:Ctx, Json(ticket_fc): Json<TicketForCreate>)-> Result<Json<Ticket>>{
+    let ticket = mc.create_ticket(ctx, ticket_fc).await?;
     todo!()
 }
-async fn list_tickets(State(mc): State<ModelController>)-> Result<Json<Ticket>>{
+async fn list_tickets(State(mc): State<ModelController>, ctx:Ctx)-> Result<Json<Ticket>>{
 println!("->> {:<12} - list_tickets", "HANDLER");
-let tickets = mc.list_tickets().await?;
+let tickets = mc.list_tickets(ctx).await?;
 Ok(Json(tickets))
 }
-async fn delete_ticket(State(mc): State<ModelController>, Path(id):Path<u64>)-> Result<Json<Ticket>>{
+async fn delete_ticket(State(mc): State<ModelController>,ctx:Ctx, Path(id):Path<u64>)-> Result<Json<Ticket>>{
 println!("->> {:<15} - delete_ticket", "HANDLER");
-let ticket = mc.delete_ticket(id).await?;
+let ticket = mc.delete_ticket(ctx, id).await?;
 Ok(Json(ticket))
 }
 //endregion ----REST Hanndlers

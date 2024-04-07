@@ -1,23 +1,29 @@
 #![allow(unused)]
 use std::{net::{Ipv4Addr, SocketAddr}, path::Path};
 use tower_cookies::CookieManagerLayer;
-pub use self::error::{Error, Result};
- use axum::{extract::Query, middleware, response::{Html, IntoResponse, Response}, routing::{get, get_service}, Router};
+use crate::model::ModelController;
 
+pub use self::error::{Error, Result};
+use axum::{extract::Query, middleware, response::{Html, IntoResponse, Response}, routing::{get, get_service}, Router};
+
+mod ctx;
 mod error;
 mod model;
 mod web;
+
 #[tokio::main] 
 async fn main() {
 
-    let mc = ModelController::new().await?;
+let mc = ModelController::new().await?;
+
+let routes_apis =web::routes_tickets::routes(mc.clone()).route_layer(middleware::from_fn(web::mw_auth::mw_require_auth));
 let routes_all = Router::new()
 .merge(routes_hello())
-.merge(web::routes_login::routes()
-    .nest("/api", web::routes_tickets::routes(mc.clone()))
+.merge(web::routes_login::routes())
+.nest("/api", routes_apis)
 .layer(middleware::map_response(main_response_mapper))
 .layer(CookieManagerLayer::new())
-).fallback_service(routes_static());
+.fallback_service(routes_static());
 //region: ---Start Server
 // let ip = Ipv4Addr::new(192, 168, 8, 1); 
 let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
